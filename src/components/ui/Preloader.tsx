@@ -95,14 +95,14 @@ const Preloader: React.FC<PreloaderProps> = ({ onComplete }) => {
                 Maybe "Hello" in different languages or just the percentage.
                 Let's stick to the minimal percentage which is very clean.
               */}
-              <div className="flex items-center justify-center">
-                  <span className="text-8xl md:text-9xl font-bold text-white font-heading tracking-tighter">
-                    {count}
-                  </span>
-                  <span className="text-4xl md:text-6xl text-[#FF6500] font-bold mt-4 md:mt-8 ml-2">
-                    %
-                  </span>
-              </div>
+                  <div className="relative inline-flex items-start justify-center">
+                      <span className="text-8xl md:text-9xl font-bold text-white font-heading tracking-tighter">
+                        {count}
+                      </span>
+                      <span className="absolute left-full top-2 md:top-4 text-4xl md:text-6xl text-[#FF6500] font-bold ml-2">
+                        %
+                      </span>
+                  </div>
               
               <div className="w-[200px] h-[2px] bg-white/10 relative overflow-hidden rounded-full">
                   <motion.div 

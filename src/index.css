@@ -123,7 +123,8 @@
   }
 
   body {
-    @apply bg-background text-foreground font-sans;
+    @apply bg-[#050505] text-foreground font-sans;
+    overflow-x: hidden;
   }
 }
 
