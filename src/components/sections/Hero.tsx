@@ -124,7 +124,7 @@ const Hero: React.FC<HeroProps> = ({ showUI }) => {
         >
             {/* Added a subtle glow/backdrop behind the lottie for separation */}
             <div className="relative w-[280px] xs:w-[300px] sm:w-[400px] md:w-[500px] lg:w-[600px] max-w-full">
-                <div className="absolute inset-0 bg-[#FF6500]/5 blur-[80px] rounded-full scale-110" />
+
                 <Player
                     src={devLottie}
                     autoplay
