@@ -95,15 +95,15 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
       transition.ready
         .then(() => {
           if (ink) {
-            // Ink splash: animate the worklet's progress property
+            // Hold the fully revealed frame until the browser removes the transition layer.
             root.animate(
               { "--ink-p": [0, 1] } as unknown as Keyframe[],
-              { duration: REVEAL_MS, easing: "cubic-bezier(0.45, 0.05, 0.4, 1)", pseudoElement: "::view-transition-new(root)" },
+              { duration: REVEAL_MS, easing: "cubic-bezier(0.45, 0.05, 0.4, 1)", fill: "both", pseudoElement: "::view-transition-new(root)" },
             );
           } else {
             root.animate(
               { clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${radius}px at ${x}px ${y}px)`] },
-              { duration: 950, easing: "cubic-bezier(0.65, 0, 0.35, 1)", pseudoElement: "::view-transition-new(root)" },
+              { duration: 950, easing: "cubic-bezier(0.65, 0, 0.35, 1)", fill: "both", pseudoElement: "::view-transition-new(root)" },
             );
           }
         })

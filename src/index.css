@@ -279,6 +279,8 @@ html[data-theme-switching]::view-transition-new(root) {
   initial-value: 0;
 }
 html[data-theme-switching][data-ink]::view-transition-new(root) {
+  /* Outside the animation, keep the incoming page visible through teardown. */
+  --ink-p: 1;
   -webkit-mask-image: paint(ink-reveal);
   mask-image: paint(ink-reveal);
   -webkit-mask-size: 100% 100%;

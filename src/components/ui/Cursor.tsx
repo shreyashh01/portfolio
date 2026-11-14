@@ -3,7 +3,7 @@ import { useEffect, useRef } from "react";
 const ORANGE = "#FF6500"; // portfolio accent
 const BASE = 32; // resting diameter (px)
 const HOVER_SCALE = 2.5; // 32px -> 80px, the zoom on hover
-const BORDER = 1.5; // px, kept constant while the ring zooms
+const BORDER = 1.5; // SVG stroke stays constant at every hover size
 
 /**
  * Wiggly transparent cursor with an orange ring.
@@ -32,9 +32,9 @@ const isHoverTarget = (el: HTMLElement | null) => {
 const Cursor = () => {
   const rootRef = useRef<HTMLDivElement>(null);
   const invertRootRef = useRef<HTMLDivElement>(null);
-  const fillRef = useRef<HTMLSpanElement>(null);
-  const ballRef = useRef<HTMLSpanElement>(null);
-  const rippleRef = useRef<HTMLSpanElement>(null);
+  const fillRef = useRef<SVGEllipseElement>(null);
+  const ballRef = useRef<SVGEllipseElement>(null);
+  const rippleRef = useRef<SVGCircleElement>(null);
   const reticleRef = useRef<HTMLDivElement>(null);
   const labelRef = useRef<HTMLSpanElement>(null);
 
@@ -49,7 +49,8 @@ const Cursor = () => {
     // Touchscreen laptops report maxTouchPoints > 0, so key off pointer type instead.
     if (!root || !ball || !ripple || !invertRoot || !fill || !reticle || !labelEl || !window.matchMedia("(any-pointer: fine)").matches) return;
 
-    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    let reduceMotion = motionQuery.matches;
 
     let targetX = 0, targetY = 0; // real pointer
     let x = 0, y = 0; // dot position
@@ -63,6 +64,7 @@ const Cursor = () => {
     let lock = 0; // eased 0..1, how tightly the reticle has locked onto an item
     let last = performance.now();
     let raf = 0;
+    let rippleStarted: number | null = null;
 
     const setVisible = (on: boolean) => {
       const v = on ? "1" : "0";
@@ -89,7 +91,7 @@ const Cursor = () => {
 
       const dx = targetX - x;
       const dy = targetY - y;
-      const follow = 1 - Math.pow(0.8, n);
+      const follow = reduceMotion ? 1 : 1 - Math.pow(0.8, n);
       x += dx * follow;
       y += dy * follow;
 
@@ -107,21 +109,40 @@ const Cursor = () => {
       // sx * sy = size^2 -> area stays constant while the shape stretches
       const sx = stretch * size;
       const sy = (1 / Math.sqrt(stretch)) * size;
-      ball.style.borderWidth = `${BORDER / size}px`; // counter-scale so the ring doesn't thicken on zoom
-      const transform = `translate3d(${x}px, ${y}px, 0) rotate(${angle}rad) scale(${sx}, ${sy})`;
-      ball.style.transform = transform;
-      fill.style.transform = transform;
+      // Change vector geometry, never scale a cached 32px cursor texture.
+      // The SVG viewport uses CSS pixels, including after browser zoom changes.
+      const rotation = `rotate(${angle * 180 / Math.PI} ${x} ${y})`;
+      for (const ellipse of [ball, fill]) {
+        ellipse.setAttribute("cx", String(x));
+        ellipse.setAttribute("cy", String(y));
+        ellipse.setAttribute("rx", String(BASE / 2 * sx));
+        ellipse.setAttribute("ry", String(BASE / 2 * sy));
+        ellipse.setAttribute("transform", rotation);
+      }
+      if (rippleStarted !== null) {
+        const progress = Math.min(1, (now - rippleStarted) / 700);
+        const eased = 1 - Math.pow(1 - progress, 3);
+        ripple.setAttribute("r", String(BASE / 2 * (0.6 + 2.6 * eased)));
+        ripple.style.opacity = String(0.9 * (1 - progress));
+        if (progress === 1) rippleStarted = null;
+      }
 
       // Scanner reticle: follows the same eased position, tightens when locked onto an item
       lock += ((scan && label ? 1 : 0) - lock) * (1 - Math.pow(0.82, n));
       const reticleScale = (1 - 0.28 * lock) * (pressed ? 0.85 : 1);
-      reticle.style.transform = `translate3d(${x}px, ${y}px, 0) scale(${reticleScale})`;
-      labelEl.style.transform = `translate3d(${x + 30}px, ${y + 20}px, 0)`;
+      const reticleSize = 56 * reticleScale;
+      reticle.style.width = `${reticleSize}px`;
+      reticle.style.height = `${reticleSize}px`;
+      reticle.style.left = `${x - reticleSize / 2}px`;
+      reticle.style.top = `${y - reticleSize / 2}px`;
+      labelEl.style.left = `${Math.round(x + 30)}px`;
+      labelEl.style.top = `${Math.round(y + 20)}px`;
 
       raf = requestAnimationFrame(tick);
     };
 
     const onMove = (e: PointerEvent) => {
+      if (e.pointerType === "touch") { leave(); return; }
       targetX = e.clientX;
       targetY = e.clientY;
       if (!seen) {
@@ -154,17 +175,16 @@ const Cursor = () => {
     };
 
     const onDown = (e: PointerEvent) => {
+      if (e.pointerType === "touch") return;
       pressed = true;
       updateSizeTarget();
-      ripple.getAnimations().forEach((a) => a.cancel());
-      ripple.style.transform = `translate3d(${e.clientX}px, ${e.clientY}px, 0) scale(0.6)`;
-      ripple.animate(
-        [
-          { transform: `translate3d(${e.clientX}px, ${e.clientY}px, 0) scale(0.6)`, opacity: 0.9 },
-          { transform: `translate3d(${e.clientX}px, ${e.clientY}px, 0) scale(3.2)`, opacity: 0 },
-        ],
-        { duration: 700, easing: "cubic-bezier(0.16, 1, 0.3, 1)" },
-      );
+      if (!reduceMotion) {
+        ripple.setAttribute("cx", String(e.clientX));
+        ripple.setAttribute("cy", String(e.clientY));
+        ripple.setAttribute("r", String(BASE / 2 * 0.6));
+        ripple.style.opacity = "0.9";
+        rippleStarted = performance.now();
+      }
     };
     const onUp = () => {
       pressed = false;
@@ -178,6 +198,8 @@ const Cursor = () => {
       label = "";
       applyScan();
       setVisible(false);
+      rippleStarted = null;
+      ripple.style.opacity = "0";
     };
     const onOut = (e: PointerEvent) => {
       if (!e.relatedTarget) leave();
@@ -186,6 +208,14 @@ const Cursor = () => {
       if (document.hidden) leave();
     };
 
+    const onMotionChange = () => {
+      reduceMotion = motionQuery.matches;
+      if (reduceMotion) {
+        rippleStarted = null;
+        ripple.style.opacity = "0";
+      }
+    };
+    motionQuery.addEventListener("change", onMotionChange);
     raf = requestAnimationFrame(tick);
     window.addEventListener("pointermove", onMove, { passive: true });
     window.addEventListener("pointerdown", onDown, { passive: true });
@@ -197,6 +227,7 @@ const Cursor = () => {
 
     return () => {
       cancelAnimationFrame(raf);
+      motionQuery.removeEventListener("change", onMotionChange);
       window.removeEventListener("pointermove", onMove);
       window.removeEventListener("pointerdown", onDown);
       window.removeEventListener("pointerup", onUp);
@@ -207,18 +238,6 @@ const Cursor = () => {
     };
   }, []);
 
-  const shape = {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    width: BASE,
-    height: BASE,
-    margin: `${-BASE / 2}px 0 0 ${-BASE / 2}px`,
-    borderRadius: "50%",
-    display: "block",
-    willChange: "transform",
-  } as const;
-
   return (
     <>
       {/* Inversion layer: a white disc under mix-blend-mode: difference flips the colours beneath it.
@@ -226,35 +245,36 @@ const Cursor = () => {
       <div
         ref={invertRootRef}
         aria-hidden="true"
-        className="pointer-events-none fixed top-0 left-0 z-[99998]"
+        className="pointer-events-none fixed inset-0 z-[99998]"
         style={{ opacity: 0, mixBlendMode: "difference", transition: "opacity 0.25s" }}
       >
-        <span ref={fillRef} style={{ ...shape, opacity: 0, background: "#fff", transition: "opacity 0.3s" }} />
+        <svg width="100%" height="100%" className="absolute inset-0" fill="none">
+          <ellipse ref={fillRef} rx={BASE / 2} ry={BASE / 2} fill="#fff" style={{ opacity: 0, transition: "opacity 0.3s" }} />
+        </svg>
       </div>
       <div
         ref={rootRef}
         aria-hidden="true"
-        className="pointer-events-none fixed top-0 left-0 z-[99999]"
+        className="pointer-events-none fixed inset-0 z-[99999]"
         style={{ opacity: 0, transition: "opacity 0.25s" }}
       >
-        <span ref={rippleRef} style={{ ...shape, opacity: 0, border: `${BORDER}px solid ${ORANGE}` }} />
-        <span
-          ref={ballRef}
-          style={{ ...shape, background: "transparent", border: `${BORDER}px solid ${ORANGE}`, transition: "opacity 0.2s" }}
-        />
+        <svg data-custom-cursor width="100%" height="100%" className="absolute inset-0" fill="none" stroke={ORANGE} strokeWidth={BORDER}>
+          <circle ref={rippleRef} r={BASE / 2} vectorEffect="non-scaling-stroke" style={{ opacity: 0 }} />
+          <ellipse ref={ballRef} data-cursor-ring rx={BASE / 2} ry={BASE / 2} vectorEffect="non-scaling-stroke" style={{ transition: "opacity 0.2s" }} />
+        </svg>
         {/* Scanner mode: spinning dashed ring + crosshair ticks, with the hovered item's name beside it */}
         <div
           ref={reticleRef}
           style={{
-            position: "absolute", top: 0, left: 0, width: 56, height: 56, margin: "-28px 0 0 -28px",
-            opacity: 0, transition: "opacity 0.2s", willChange: "transform",
+            position: "absolute", top: 0, left: 0, width: 56, height: 56,
+            opacity: 0, transition: "opacity 0.2s",
           }}
         >
-          <svg viewBox="0 0 56 56" width="56" height="56" fill="none" stroke={ORANGE} strokeLinecap="round" style={{ filter: "drop-shadow(0 0 5px rgba(255,101,0,0.65))" }}>
+          <svg viewBox="0 0 56 56" width="100%" height="100%" fill="none" stroke={ORANGE} strokeLinecap="round">
             <g className="cursor-reticle-spin" style={{ transformOrigin: "28px 28px" }}>
-              <circle cx="28" cy="28" r="21" strokeWidth="2" strokeDasharray="4 6" />
+              <circle cx="28" cy="28" r="21" strokeWidth="2" vectorEffect="non-scaling-stroke" strokeDasharray="4 6" />
             </g>
-            <path d="M28 3v9M28 44v9M3 28h9M44 28h9" strokeWidth="2" />
+            <path d="M28 3v9M28 44v9M3 28h9M44 28h9" strokeWidth="2" vectorEffect="non-scaling-stroke" />
             <circle cx="28" cy="28" r="2" fill={ORANGE} stroke="none" />
           </svg>
         </div>
@@ -264,7 +284,7 @@ const Cursor = () => {
             position: "absolute", top: 0, left: 0, opacity: 0, transition: "opacity 0.15s", whiteSpace: "nowrap",
             font: '500 12px/1 ui-monospace, "JetBrains Mono", SFMono-Regular, Menlo, monospace',
             color: ORANGE, background: "rgba(5,5,5,0.88)", border: `1px solid ${ORANGE}66`,
-            padding: "4px 8px", borderRadius: 6, willChange: "transform",
+            padding: "4px 8px", borderRadius: 6,
           }}
         />
       </div>
