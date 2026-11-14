@@ -15,7 +15,7 @@ const EarthModel = () => {
   return (
     <primitive
       object={scene}
-      scale={4.0}
+      scale={5}
       position-y={0}
     />
   );
@@ -65,7 +65,7 @@ const SkillsRing = ({ skills, visible }: { skills: Skill[], visible: boolean }) 
     }
   });
 
-  const radius = 7;
+  const radius = 8.6;
 
   return (
     <group ref={groupRef} rotation={[0.85, 0.5, -0.25]}>
@@ -97,6 +97,20 @@ const SkillsRing = ({ skills, visible }: { skills: Skill[], visible: boolean }) 
       })}
     </group>
   );
+};
+
+// Pull the camera back on narrow canvases so the whole orbit always stays in frame.
+const BASE_CAMERA = new THREE.Vector3(-15, 10, 20);
+const FitCamera = () => {
+  const { camera, size, invalidate } = useThree();
+  useEffect(() => {
+    const aspect = size.width / size.height;
+    const zoomOut = Math.max(1, 0.85 / aspect);
+    camera.position.copy(BASE_CAMERA).multiplyScalar(zoomOut);
+    camera.updateProjectionMatrix();
+    invalidate();
+  }, [camera, size.width, size.height, invalidate]);
+  return null;
 };
 
 const EarthCanvas = ({ skills = [], visible = true }: { skills?: Skill[], visible?: boolean }) => {
@@ -132,6 +146,7 @@ const EarthCanvas = ({ skills = [], visible = true }: { skills?: Skill[], visibl
           enableDamping={true}
           dampingFactor={0.1}
         />
+        <FitCamera />
         <EarthModel />
         {skills.length > 0 && <SkillsRing skills={skills} visible={visible} />}
         <Preload all />

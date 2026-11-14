@@ -9,7 +9,7 @@ interface BallProps {
 }
 
 const ORANGE = '#FF6500'; // portfolio accent
-const RADIUS = 0.8;
+const RADIUS = 1.05;
 
 /**
  * Orbit badge: a dark glass disc with an orange rim and the tech icon on top.
