@@ -9,22 +9,32 @@ import Ball from './Ball';
 // instead of looking huge up close and bunched together at the back.
 const FOV = 28;
 const BASE_CAMERA = new THREE.Vector3(-15, 10, 20).multiplyScalar(1.68);
+// Camera elevation is locked to the design angle. (OrbitControls used to clamp it to the horizon,
+// which changed how the ring is seen.) The camera never auto-rotates: the planet spins instead,
+// so the ring keeps the same open view no matter how long the page stays open.
+const POLAR = Math.acos(BASE_CAMERA.y / BASE_CAMERA.length());
 const SHIFT_RIGHT = 0.09; // push the scene right (fraction of canvas width), away from the skills panel
 
 
-const EarthModel = () => {
+const EarthModel = ({ visible }: { visible: boolean }) => {
   const earth = useGLTF('/planet/scene.gltf');
-  
+  const spinRef = useRef<THREE.Group>(null);
+  const { invalidate } = useThree();
+
   const scene = useMemo(() => {
     return earth.scene.clone();
   }, [earth.scene]);
 
+  useFrame((_, delta) => {
+    if (!visible || !spinRef.current) return;
+    spinRef.current.rotation.y += delta * 0.12; // slow planetary spin
+    invalidate();
+  });
+
   return (
-    <primitive
-      object={scene}
-      scale={5}
-      position-y={0}
-    />
+    <group ref={spinRef}>
+      <primitive object={scene} scale={5} position-y={0} />
+    </group>
   );
 };
 
@@ -128,6 +138,8 @@ const FitCamera = () => {
   useEffect(() => {
     const aspect = size.width / size.height;
     const zoomOut = Math.max(1, 0.85 / aspect);
+    // Re-apply the lens as well as the position: a hot-reloaded canvas keeps its old camera object.
+    Object.assign(camera, { fov: FOV });
     camera.position.copy(BASE_CAMERA).multiplyScalar(zoomOut);
     // Negative x offset slides the rendered image to the right without moving the orbit pivot
     (camera as THREE.PerspectiveCamera).setViewOffset(
@@ -163,17 +175,15 @@ const EarthCanvas = ({ skills = [], visible = true }: { skills?: Skill[], visibl
         <ambientLight intensity={1} />
         <directionalLight position={[0, 0, 0.05]} />
         <OrbitControls
-          autoRotate
-          autoRotateSpeed={0.2}
           enableZoom={false}
           enablePan={false}
-          maxPolarAngle={Math.PI / 2}
-          minPolarAngle={Math.PI / 2}
+          minPolarAngle={POLAR}
+          maxPolarAngle={POLAR}
           enableDamping={true}
           dampingFactor={0.1}
         />
         <FitCamera />
-        <EarthModel />
+        <EarthModel visible={visible} />
         {skills.length > 0 && <SkillsRing skills={skills} visible={visible} />}
         <Preload all />
       </Suspense>
