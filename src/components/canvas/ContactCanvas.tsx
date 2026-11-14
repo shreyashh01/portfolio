@@ -1,7 +1,9 @@
 import { useRef, useState, useEffect } from 'react';
-import { Canvas } from '@react-three/fiber';
+import { Canvas, useThree } from '@react-three/fiber';
 import { Stars, Float } from '@react-three/drei';
 import * as THREE from 'three';
+import { DriftingClouds, HotAirBalloon } from './DayProps';
+import { useTheme } from '../../theme/ThemeContext';
 
 const Rocket = () => {
   const groupRef = useRef<THREE.Group>(null);
@@ -53,6 +55,25 @@ const Rocket = () => {
   );
 };
 
+// Keeps the balloon near the right edge of the scene at any aspect ratio, clear of the centred text.
+const BalloonAnchor = ({ isMobile }: { isMobile: boolean }) => {
+  const viewportWidth = useThree((state) => state.viewport.width);
+  // Desktop: right of the centred text, left of the email sidebar. Phone: low, below the socials.
+  const x = isMobile ? 0.9 : Math.max(viewportWidth / 2 - 2.9, 2.8);
+  return (
+    <group position={[x, isMobile ? -4.5 : 0.5, 0]} scale={isMobile ? 0.45 : 0.8}>
+      <HotAirBalloon />
+    </group>
+  );
+};
+
+const CONTACT_CLOUDS = [
+  { position: [-8, 2.8, -3] as [number, number, number], scale: 1.0, speed: 0.2 },
+  { position: [-1, 3.8, -6] as [number, number, number], scale: 1.3, speed: 0.13 },
+  { position: [7, -2.8, -5] as [number, number, number], scale: 1.1, speed: 0.17 },
+  { position: [-6, -3.2, -4] as [number, number, number], scale: 0.9, speed: 0.22 },
+];
+
 const ContactCanvas = ({ visible = true }: { visible?: boolean }) => {
   const [isMobile, setIsMobile] = useState(false);
 
@@ -67,6 +88,22 @@ const ContactCanvas = ({ visible = true }: { visible?: boolean }) => {
       mediaQuery.removeEventListener("change", handleMediaQueryChange);
     };
   }, []);
+
+  const light = useTheme().theme === 'light';
+
+  if (light) {
+    return (
+      <div className="absolute inset-0 w-full h-full pointer-events-none z-0 overflow-hidden">
+        <Canvas flat camera={{ position: [0, 0, 8], fov: 60 }} dpr={[1, 1.5]} frameloop={visible ? "always" : "demand"}>
+          <ambientLight intensity={1.9} />
+          <directionalLight position={[5, 8, 6]} intensity={1.6} color="#fff1d6" />
+          <DriftingClouds visible={visible} specs={CONTACT_CLOUDS} span={13} opacity={0.8} />
+          {/* The rocket's day counterpart */}
+          <BalloonAnchor isMobile={isMobile} />
+        </Canvas>
+      </div>
+    );
+  }
 
   return (
     <div className="absolute inset-0 w-full h-full pointer-events-none z-0 overflow-hidden">

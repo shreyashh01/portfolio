@@ -2,6 +2,8 @@ import { useRef, useMemo } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { Stars } from '@react-three/drei';
 import * as THREE from 'three';
+import { DriftingClouds, Pollen } from './DayProps';
+import { useTheme } from '../../theme/ThemeContext';
 
 const HolographicRings = ({ visible }: { visible: boolean }) => {
   const ref = useRef<THREE.Group>(null);
@@ -119,7 +121,36 @@ const DataStream = ({ visible }: { visible: boolean }) => {
   );
 };
 
+// Day theme: slow clouds at different depths
+const DAY_CLOUDS = [
+  { position: [-9, 3.2, -3] as [number, number, number], scale: 1.0, speed: 0.22 },
+  { position: [-2, 4.4, -6] as [number, number, number], scale: 1.3, speed: 0.14 },
+  { position: [6, 2.6, -4] as [number, number, number], scale: 0.9, speed: 0.26 },
+  { position: [10, -1.4, -5] as [number, number, number], scale: 1.2, speed: 0.17 },
+  { position: [-7, -3.2, -4] as [number, number, number], scale: 1.0, speed: 0.2 },
+  { position: [2, -4.4, -7] as [number, number, number], scale: 1.4, speed: 0.12 },
+];
+
 const ExperienceCanvas = ({ visible = true }: { visible?: boolean }) => {
+  const light = useTheme().theme === 'light';
+
+  if (light) {
+    // The section is several screens tall, so the sky is a viewport-sized layer that sticks
+    // while you scroll (a full-height canvas would stretch the scene and waste GPU memory).
+    return (
+      <div className="absolute inset-0 pointer-events-none z-0">
+        <div className="sticky top-0 h-screen w-full">
+          <Canvas flat camera={{ position: [0, 0, 8], fov: 60 }} dpr={[1, 1.5]} frameloop="demand" performance={{ min: 0.3 }}>
+            <ambientLight intensity={1.4} />
+            <directionalLight position={[6, 10, 6]} intensity={0.9} color="#ffe2b0" />
+            <DriftingClouds visible={visible} specs={DAY_CLOUDS} opacity={0.7} />
+            <Pollen visible={visible} />
+          </Canvas>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="absolute inset-0 w-full h-full pointer-events-none -z-10">
       <Canvas 

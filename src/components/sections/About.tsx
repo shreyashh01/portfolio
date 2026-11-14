@@ -106,6 +106,7 @@ const About: React.FC = () => {
                 repeatType: "mirror"
               }}
               data-hide-cursor="true"
+              data-on-media
             >
                <div className="absolute inset-0 bg-neutral-900/20 z-10 group-hover:bg-transparent transition-colors duration-300 pointer-events-none"></div> {/* Subtle overlay */}
                

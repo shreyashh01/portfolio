@@ -1,6 +1,7 @@
 import { Home, User, Briefcase, Mail, Code } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState } from "react";
+import { ThemeToggle } from "./ThemeToggle";
 
 interface FloatingDockProps {
   show: boolean;
@@ -28,7 +29,7 @@ export const FloatingDock: React.FC<FloatingDockProps> = ({ show }) => {
             damping: 18,
             mass: 0.6
           }}
-          className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center justify-center gap-4 px-4 py-3 rounded-full bg-[#111111]/90 border border-white/10 shadow-[0_0_20px_rgba(255,255,255,0.05),0_0_40px_rgba(255,101,0,0.15)] backdrop-blur-md w-[90%] max-w-md md:w-auto overflow-visible"
+          className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center justify-center gap-0.5 sm:gap-4 px-2 sm:px-4 py-3 rounded-full bg-[#111111]/90 border border-white/10 shadow-[0_0_20px_rgba(255,255,255,0.05),0_0_40px_rgba(255,101,0,0.15)] backdrop-blur-md w-[90%] max-w-md md:w-auto overflow-visible"
         >
             {navItems.map((item, index) => (
                 <div 
@@ -89,6 +90,10 @@ export const FloatingDock: React.FC<FloatingDockProps> = ({ show }) => {
                     </AnimatePresence>
                 </div>
             ))}
+
+            {/* Day / night switch */}
+            <span className="h-6 w-px bg-white/10" aria-hidden="true" />
+            <ThemeToggle />
         </motion.div>
     );
 };

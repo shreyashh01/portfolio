@@ -46,7 +46,7 @@ const ringSkills = [
   { name: 'MongoDB', icon: '/icons/ring/mongodb.png' },
   { name: 'Docker', icon: '/icons/ring/docker.png' },
   { name: 'Git', icon: '/icons/ring/git.png' },
-  { name: 'AWS', icon: '/icons/ring/amazonwebservices.png' },
+  { name: 'AWS', icon: '/icons/ring/amazonwebservices.png', iconDay: '/icons/ring/amazonwebservices-day.png' },
 ];
 
 const slug = (title: string) => title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');

@@ -4,6 +4,8 @@ import { OrbitControls, Preload, useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 
 import Ball from './Ball';
+import SunModel from './Sun';
+import { useTheme } from '../../theme/ThemeContext';
 
 // Narrow FOV + a distant camera = weak perspective, so orbs spread evenly around the ring
 // instead of looking huge up close and bunched together at the back.
@@ -60,6 +62,8 @@ class IconBoundary extends Component<{ children: ReactNode; name: string }, { fa
 interface Skill {
   name: string;
   icon: string;
+  /** optional icon variant that reads on the cream day-theme badge */
+  iconDay?: string;
 }
 
 // Ring plane: tilted away from the camera by OPEN_ANGLE (0 = face-on circle, 90 = edge-on line).
@@ -75,7 +79,7 @@ const RING_TILT = (() => {
   return new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), normal.normalize());
 })();
 
-const SkillsRing = ({ skills, visible }: { skills: Skill[], visible: boolean }) => {
+const SkillsRing = ({ skills, visible, light }: { skills: Skill[], visible: boolean, light: boolean }) => {
   const groupRef = useRef<THREE.Group>(null);
   const [ballsVisible, setBallsVisible] = useState(false);
   const { invalidate } = useThree();
@@ -123,7 +127,8 @@ const SkillsRing = ({ skills, visible }: { skills: Skill[], visible: boolean }) 
           <group key={skill.name} position={[x, 0, z]}>
             <IconBoundary name={skill.name}>
               <Ball
-                imgUrl={skill.icon}
+                light={light}
+                imgUrl={light && skill.iconDay ? skill.iconDay : skill.icon}
                 visible={ballsVisible}
                 delay={index * 0.25}
               />
@@ -155,6 +160,8 @@ const FitCamera = () => {
 };
 
 const EarthCanvas = ({ skills = [], visible = true }: { skills?: Skill[], visible?: boolean }) => {
+  // Read the theme out here: hooks inside <Canvas> run in a separate React root
+  const light = useTheme().theme === 'light';
   return (
     <Canvas
       frameloop="demand"
@@ -186,8 +193,8 @@ const EarthCanvas = ({ skills = [], visible = true }: { skills?: Skill[], visibl
           dampingFactor={0.1}
         />
         <FitCamera />
-        <EarthModel visible={visible} />
-        {skills.length > 0 && <SkillsRing skills={skills} visible={visible} />}
+        {light ? <SunModel visible={visible} /> : <EarthModel visible={visible} />}
+        {skills.length > 0 && <SkillsRing skills={skills} visible={visible} light={light} />}
         <Preload all />
       </Suspense>
     </Canvas>

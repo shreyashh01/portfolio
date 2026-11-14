@@ -1,4 +1,6 @@
 import SpaceCanvas from "../canvas/spaceCanvas";
+import DayCanvas from "../canvas/DayCanvas";
+import { useTheme } from "../../theme/ThemeContext";
 import { Player } from "@lottiefiles/react-lottie-player";
 import devLottie from "../../assets/Marketing management.json";
 import resumeFile from "../../assets/resume/shreyash.resume.pdf";
@@ -12,6 +14,7 @@ interface HeroProps {
 }
 
 const Hero: React.FC<HeroProps> = ({ showUI }) => {
+  const isDay = useTheme().theme === "light";
   const containerVariants: Variants = {
     hidden: { opacity: 0 },
     visible: {
@@ -50,13 +53,13 @@ const Hero: React.FC<HeroProps> = ({ showUI }) => {
 
   return (
     <div className="relative min-h-screen overflow-hidden">
-      {/* Space background */}
+      {/* Background: starfield at night, morning sky by day */}
       <div className="fixed inset-0 z-0">
-        <SpaceCanvas />
+        {isDay ? <DayCanvas /> : <SpaceCanvas />}
       </div>
 
-      {/* Dark overlay for better text contrast */}
-      <div className="fixed inset-0 z-[1] bg-black/40" />
+      {/* Dark overlay for better text contrast (night only) */}
+      {!isDay && <div className="fixed inset-0 z-[1] bg-black/40" />}
 
       {/* Hero layout */}
       <div id="hero" className="relative z-10 w-full max-w-7xl mx-auto px-6 md:px-16 min-h-screen flex flex-col md:flex-row items-center justify-center md:justify-between pt-20 pb-32 md:py-0">
