@@ -1,4 +1,4 @@
-import { Suspense, useRef, useState, useEffect, useMemo } from 'react';
+import { Component, Suspense, useRef, useState, useEffect, useMemo, type ReactNode } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls, Preload, useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
@@ -20,6 +20,20 @@ const EarthModel = () => {
     />
   );
 };
+
+// A single icon failing to load must not take down the whole canvas.
+class IconBoundary extends Component<{ children: ReactNode; name: string }, { failed: boolean }> {
+  state = { failed: false };
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+  componentDidCatch(error: unknown) {
+    console.warn(`Skill icon "${this.props.name}" failed to load`, error);
+  }
+  render() {
+    return this.state.failed ? null : this.props.children;
+  }
+}
 
 interface Skill {
   name: string;
@@ -62,11 +76,13 @@ const SkillsRing = ({ skills, visible }: { skills: Skill[], visible: boolean }) 
 
         return (
           <group key={skill.name} position={[x, 0, z]}>
-            <Ball 
-              imgUrl={skill.icon} 
-              visible={ballsVisible}
-              delay={index * 0.25}
-            />
+            <IconBoundary name={skill.name}>
+              <Ball
+                imgUrl={skill.icon}
+                visible={ballsVisible}
+                delay={index * 0.25}
+              />
+            </IconBoundary>
           </group>
         );
       })}
