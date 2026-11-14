@@ -1,6 +1,6 @@
-import { Decal, useTexture, Icosahedron, Billboard } from '@react-three/drei';
-import { useRef } from 'react';
+import { useTexture, Billboard } from '@react-three/drei';
 import { useSpring, animated } from '@react-spring/three';
+import { SRGBColorSpace, type Texture } from 'three';
 
 interface BallProps {
   imgUrl: string;
@@ -8,45 +8,52 @@ interface BallProps {
   delay?: number;
 }
 
-const Ball = ({ imgUrl, visible = true, delay = 0 }: BallProps) => {
-  const [decal] = useTexture([imgUrl]);
-  const meshRef = useRef<any>(null);
+const ORANGE = '#FF6500'; // portfolio accent
+const RADIUS = 0.8;
 
-  // Spring animation for entrance (smooth fade)
-  // Spring animation for entrance (smooth pop)
-  // Spring animation for entrance (smooth pop)
-  const springs = useSpring({
+/**
+ * Orbit badge: a dark glass disc with an orange rim and the tech icon on top.
+ * Always faces the camera (Billboard) and pops in with a spring.
+ */
+const Ball = ({ imgUrl, visible = true, delay = 0 }: BallProps) => {
+  const [icon] = useTexture([imgUrl], (tex) => {
+    (Array.isArray(tex) ? tex : [tex]).forEach((t: Texture) => {
+      t.colorSpace = SRGBColorSpace;
+      t.anisotropy = 8;
+    });
+  });
+
+  const { scale, fade } = useSpring({
     scale: visible ? 1 : 0,
-    opacity: visible ? 1 : 0,
-    config: { 
-      mass: 1,
-      tension: 280, // Higher tension for more snap
-      friction: 18, // Adjusted friction for a nice wobble without being too loose
-    },
-    delay: visible ? delay * 1000 : 0, // No delay when hiding for snappy exit 
+    fade: visible ? 1 : 0,
+    config: { mass: 1, tension: 260, friction: 18 },
+    delay: visible ? delay * 1000 : 0,
   });
 
   return (
     <Billboard>
-      <animated.mesh 
-        ref={meshRef}
-        scale={springs.scale}
-      >
-        <Icosahedron args={[1, 1]}>
-          <animated.meshStandardMaterial
-            color='#ffffff'
-            flatShading
-            transparent
-            opacity={springs.opacity}
-          />
-          <Decal
-            position={[0, 0, 1]}
-            rotation={[2 * Math.PI, 0, 6.25]}
-            scale={1}
-            map={decal}
-          />
-        </Icosahedron>
-      </animated.mesh>
+      <animated.group scale={scale}>
+        {/* soft halo */}
+        <mesh renderOrder={1}>
+          <circleGeometry args={[RADIUS * 1.28, 64]} />
+          <animated.meshBasicMaterial color={ORANGE} transparent depthWrite={false} opacity={fade.to((o) => o * 0.1)} />
+        </mesh>
+        {/* glass body */}
+        <mesh position={[0, 0, 0.01]} renderOrder={2}>
+          <circleGeometry args={[RADIUS, 64]} />
+          <animated.meshBasicMaterial color="#0d0e17" transparent depthWrite={false} opacity={fade.to((o) => o * 0.93)} />
+        </mesh>
+        {/* orange rim */}
+        <mesh position={[0, 0, 0.02]} renderOrder={3}>
+          <ringGeometry args={[RADIUS * 0.94, RADIUS, 64]} />
+          <animated.meshBasicMaterial color={ORANGE} transparent depthWrite={false} opacity={fade.to((o) => o * 0.9)} />
+        </mesh>
+        {/* icon */}
+        <mesh position={[0, 0, 0.03]} renderOrder={4}>
+          <planeGeometry args={[RADIUS * 1.2, RADIUS * 1.2]} />
+          <meshBasicMaterial map={icon} transparent depthWrite={false} toneMapped={false} />
+        </mesh>
+      </animated.group>
     </Billboard>
   );
 };

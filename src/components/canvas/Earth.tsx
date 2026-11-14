@@ -65,10 +65,19 @@ const SkillsRing = ({ skills, visible }: { skills: Skill[], visible: boolean }) 
     }
   });
 
-  const radius = 6.5;
+  const radius = 7;
 
   return (
-    <group ref={groupRef} rotation={[0.6, 0.5, -0.6]}>
+    <group ref={groupRef} rotation={[0.85, 0.5, -0.25]}>
+      {/* orbit track: thin orange ring in the same plane the badges travel on */}
+      <mesh rotation={[Math.PI / 2, 0, 0]} visible={ballsVisible}>
+        <torusGeometry args={[radius, 0.018, 8, 200]} />
+        <meshBasicMaterial color="#FF6500" transparent opacity={0.35} />
+      </mesh>
+      <mesh rotation={[Math.PI / 2, 0, 0]} visible={ballsVisible}>
+        <torusGeometry args={[radius, 0.09, 8, 200]} />
+        <meshBasicMaterial color="#FF6500" transparent opacity={0.06} depthWrite={false} />
+      </mesh>
       {skills.map((skill, index) => {
         const angle = (index / skills.length) * Math.PI * 2;
         const x = Math.cos(angle) * radius;

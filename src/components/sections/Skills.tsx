@@ -30,15 +30,15 @@ const skills = [
 
 // Skills to display on the 3D ring balls (9 specific technologies)
 const ringSkills = [
-  { name: 'React', icon: '/icons/react-original.svg' },
-  { name: 'Svelte', icon: '/icons/svelte-original.svg' },
-  { name: 'Next.js', icon: '/icons/nextjs-original.svg' },
-  { name: 'Node.js', icon: '/icons/nodejs-original.svg' },
-  { name: 'MongoDB', icon: '/icons/mongodb-original.svg' },
-  { name: 'Python', icon: '/icons/python-original.svg' },
-  { name: 'Docker', icon: '/icons/docker-original.svg' },
-  { name: 'Git', icon: '/icons/git-original.svg' },
-  { name: 'AWS', icon: '/icons/amazonwebservices-original-wordmark.svg' },
+  { name: 'React', icon: '/icons/ring/react.png' },
+  { name: 'Svelte', icon: '/icons/ring/svelte.png' },
+  { name: 'Next.js', icon: '/icons/ring/nextjs.png' },
+  { name: 'Node.js', icon: '/icons/ring/nodejs.png' },
+  { name: 'MongoDB', icon: '/icons/ring/mongodb.png' },
+  { name: 'Python', icon: '/icons/ring/python.png' },
+  { name: 'Docker', icon: '/icons/ring/docker.png' },
+  { name: 'Git', icon: '/icons/ring/git.png' },
+  { name: 'AWS', icon: '/icons/ring/amazonwebservices.png' },
 ];
 
 const Skills: React.FC = () => {
