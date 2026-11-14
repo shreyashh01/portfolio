@@ -35,6 +35,8 @@ const Cursor = () => {
   const fillRef = useRef<HTMLSpanElement>(null);
   const ballRef = useRef<HTMLSpanElement>(null);
   const rippleRef = useRef<HTMLSpanElement>(null);
+  const reticleRef = useRef<HTMLDivElement>(null);
+  const labelRef = useRef<HTMLSpanElement>(null);
 
   useEffect(() => {
     const root = rootRef.current;
@@ -42,8 +44,10 @@ const Cursor = () => {
     const ripple = rippleRef.current;
     const invertRoot = invertRootRef.current;
     const fill = fillRef.current;
+    const reticle = reticleRef.current;
+    const labelEl = labelRef.current;
     // Touchscreen laptops report maxTouchPoints > 0, so key off pointer type instead.
-    if (!root || !ball || !ripple || !invertRoot || !fill || !window.matchMedia("(any-pointer: fine)").matches) return;
+    if (!root || !ball || !ripple || !invertRoot || !fill || !reticle || !labelEl || !window.matchMedia("(any-pointer: fine)").matches) return;
 
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -54,6 +58,9 @@ const Cursor = () => {
     let size = 1; // eased hover/press scale
     let sizeTarget = 1;
     let seen = false, hovering = false, pressed = false, hidden = false;
+    let scan = false; // over a [data-cursor="scan"] area: the ring becomes a targeting reticle
+    let label = ""; // name of the [data-cursor-label] item under the pointer
+    let lock = 0; // eased 0..1, how tightly the reticle has locked onto an item
     let last = performance.now();
     let raf = 0;
 
@@ -64,9 +71,16 @@ const Cursor = () => {
     };
 
     const updateSizeTarget = () => {
-      sizeTarget = pressed ? 0.6 : hovering ? HOVER_SCALE : 1;
-      // inverted-colour disc fades in while zoomed over text/media
-      fill.style.opacity = hovering && !pressed ? "1" : hovering ? "0.85" : "0";
+      sizeTarget = pressed ? 0.6 : hovering && !scan ? HOVER_SCALE : 1;
+      // inverted-colour disc fades in while zoomed over text/media (not in scan areas)
+      fill.style.opacity = scan ? "0" : hovering && !pressed ? "1" : hovering ? "0.85" : "0";
+    };
+
+    const applyScan = () => {
+      ball.style.opacity = scan ? "0" : "1";
+      reticle.style.opacity = scan ? "1" : "0";
+      labelEl.style.opacity = scan && label ? "1" : "0";
+      updateSizeTarget();
     };
 
     const tick = (now: number) => {
@@ -98,6 +112,12 @@ const Cursor = () => {
       ball.style.transform = transform;
       fill.style.transform = transform;
 
+      // Scanner reticle: follows the same eased position, tightens when locked onto an item
+      lock += ((scan && label ? 1 : 0) - lock) * (1 - Math.pow(0.82, n));
+      const reticleScale = (1 - 0.28 * lock) * (pressed ? 0.85 : 1);
+      reticle.style.transform = `translate3d(${x}px, ${y}px, 0) scale(${reticleScale})`;
+      labelEl.style.transform = `translate3d(${x + 30}px, ${y + 20}px, 0)`;
+
       raf = requestAnimationFrame(tick);
     };
 
@@ -115,6 +135,16 @@ const Cursor = () => {
       if (nextHover !== hovering) {
         hovering = nextHover;
         updateSizeTarget();
+      }
+      const nextScan = !!el?.closest('[data-cursor="scan"]');
+      const nextLabel = el?.closest("[data-cursor-label]")?.getAttribute("data-cursor-label") ?? "";
+      if (nextScan !== scan || nextLabel !== label) {
+        scan = nextScan;
+        if (nextLabel !== label) {
+          label = nextLabel;
+          labelEl.textContent = label;
+        }
+        applyScan();
       }
       const nextHidden = !!el?.closest('[data-hide-cursor="true"]');
       if (nextHidden !== hidden) {
@@ -144,7 +174,9 @@ const Cursor = () => {
       seen = false;
       hovering = false;
       pressed = false;
-      updateSizeTarget();
+      scan = false;
+      label = "";
+      applyScan();
       setVisible(false);
     };
     const onOut = (e: PointerEvent) => {
@@ -206,7 +238,35 @@ const Cursor = () => {
         style={{ opacity: 0, transition: "opacity 0.25s" }}
       >
         <span ref={rippleRef} style={{ ...shape, opacity: 0, border: `${BORDER}px solid ${ORANGE}` }} />
-        <span ref={ballRef} style={{ ...shape, background: "transparent", border: `${BORDER}px solid ${ORANGE}` }} />
+        <span
+          ref={ballRef}
+          style={{ ...shape, background: "transparent", border: `${BORDER}px solid ${ORANGE}`, transition: "opacity 0.2s" }}
+        />
+        {/* Scanner mode: spinning dashed ring + crosshair ticks, with the hovered item's name beside it */}
+        <div
+          ref={reticleRef}
+          style={{
+            position: "absolute", top: 0, left: 0, width: 56, height: 56, margin: "-28px 0 0 -28px",
+            opacity: 0, transition: "opacity 0.2s", willChange: "transform",
+          }}
+        >
+          <svg viewBox="0 0 56 56" width="56" height="56" fill="none" stroke={ORANGE} strokeLinecap="round" style={{ filter: "drop-shadow(0 0 5px rgba(255,101,0,0.65))" }}>
+            <g className="cursor-reticle-spin" style={{ transformOrigin: "28px 28px" }}>
+              <circle cx="28" cy="28" r="21" strokeWidth="2" strokeDasharray="4 6" />
+            </g>
+            <path d="M28 3v9M28 44v9M3 28h9M44 28h9" strokeWidth="2" />
+            <circle cx="28" cy="28" r="2" fill={ORANGE} stroke="none" />
+          </svg>
+        </div>
+        <span
+          ref={labelRef}
+          style={{
+            position: "absolute", top: 0, left: 0, opacity: 0, transition: "opacity 0.15s", whiteSpace: "nowrap",
+            font: '500 12px/1 ui-monospace, "JetBrains Mono", SFMono-Regular, Menlo, monospace',
+            color: ORANGE, background: "rgba(5,5,5,0.88)", border: `1px solid ${ORANGE}66`,
+            padding: "4px 8px", borderRadius: 6, willChange: "transform",
+          }}
+        />
       </div>
     </>
   );

@@ -49,6 +49,8 @@ const ringSkills = [
   { name: 'AWS', icon: '/icons/ring/amazonwebservices.png' },
 ];
 
+const slug = (title: string) => title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+
 const AUTO_MS = 4500; // time each category stays on screen while auto-cycling
 const totalSkills = skillGroups.reduce((n, g) => n + g.items.length, 0);
 
@@ -72,6 +74,7 @@ const SkillsPanel: React.FC<{ inView: boolean }> = ({ inView }) => {
 
   return (
     <div
+      data-cursor="scan"
       className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-sm"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
@@ -89,6 +92,7 @@ const SkillsPanel: React.FC<{ inView: boolean }> = ({ inView }) => {
               <button
                 key={g.title}
                 role="tab"
+                data-cursor-label={`${g.title} · ${g.items.length}`}
                 aria-selected={selected}
                 onClick={() => setIndex(i)}
                 onFocus={() => setIndex(i)}
@@ -122,24 +126,33 @@ const SkillsPanel: React.FC<{ inView: boolean }> = ({ inView }) => {
               exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.2 }}
             >
-              <p className="font-mono text-xs uppercase tracking-[0.2em] text-[#FF6500]/80">
-                {String(index + 1).padStart(2, '0')} / {String(skillGroups.length).padStart(2, '0')}
+              <p className="font-mono text-xs text-gray-500">
+                <span className="text-[#FF6500]">$</span> ls ~/skills/{slug(group.title)}
+                <span className="ml-3 text-gray-600">
+                  {String(index + 1).padStart(2, '0')}/{String(skillGroups.length).padStart(2, '0')}
+                </span>
               </p>
-              <h3 className="mt-1 text-2xl font-semibold text-white">{group.title}</h3>
-              <div className="mt-4 flex flex-wrap gap-2">
-                {group.items.map((item, i) => (
-                  <motion.span
-                    key={item}
-                    initial={{ opacity: 0, scale: 0.85 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: 0.04 * i, type: 'spring', stiffness: 380, damping: 24 }}
-                    whileHover={{ y: -3 }}
-                    className="cursor-default rounded-full border border-gray-700/80 bg-gray-900/60 px-3 py-1 text-sm text-gray-200 transition-colors hover:border-[#FF6500] hover:text-[#FF6500]"
-                  >
-                    {item}
-                  </motion.span>
-                ))}
-              </div>
+              <h3 className="mt-2 text-2xl font-semibold text-white">{group.title}</h3>
+              <ul className="mt-4 font-mono text-sm">
+                {group.items.map((item, i) => {
+                  const last = i === group.items.length - 1;
+                  return (
+                    <motion.li
+                      key={item}
+                      data-cursor-label={`${slug(group.title)}/${String(i + 1).padStart(2, '0')}`}
+                      initial={{ opacity: 0, x: -8 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.035 * i, duration: 0.25 }}
+                      className="group flex items-baseline gap-2 py-[3px] text-gray-300 transition-colors hover:text-[#FF6500]"
+                    >
+                      <span className="select-none text-gray-600 transition-colors group-hover:text-[#FF6500]">
+                        {last ? '└─' : '├─'}
+                      </span>
+                      <span className="transition-transform duration-200 group-hover:translate-x-1">{item}</span>
+                    </motion.li>
+                  );
+                })}
+              </ul>
             </motion.div>
           </AnimatePresence>
         </div>

@@ -137,6 +137,17 @@
 
 
 
+/* Skills scanner cursor: slow-spinning dashed ring */
+@keyframes cursor-reticle-spin {
+  to { transform: rotate(360deg); }
+}
+.cursor-reticle-spin {
+  animation: cursor-reticle-spin 8s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .cursor-reticle-spin { animation: none; }
+}
+
 /* Custom Scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
