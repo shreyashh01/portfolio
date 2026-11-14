@@ -3,39 +3,48 @@ import { motion, useInView } from 'framer-motion';
 import { useRef } from 'react';
 import EarthCanvas from '../canvas/Earth';
 
-// All skills to display as tags
-const skills = [
-  { name: 'React', icon: '/icons/react-original.svg' },
-  { name: 'Next.js', icon: '/icons/nextjs-original.svg' },
-  { name: 'Svelte', icon: '/icons/svelte-original.svg' },
-  { name: 'Node.js', icon: '/icons/nodejs-original.svg' },
-  { name: 'Express', icon: '/icons/express-original.svg' },
-  { name: 'Python', icon: '/icons/python-original.svg' },
-  { name: 'FastAPI', icon: '/icons/fastapi-original.svg' },
-  { name: 'PostgreSQL', icon: '/icons/postgresql-original.svg' },
-  { name: 'MongoDB', icon: '/icons/mongodb-original.svg' },
-  { name: 'Supabase', icon: '/icons/supabase-original.svg' },
-  { name: 'WebSockets', icon: '/icons/socketio-original.svg' },
-  { name: 'REST APIs', icon: '/icons/nodejs-original.svg' },
-  { name: 'Electron.js', icon: '/icons/electron-original.svg' },
-  { name: 'Docker', icon: '/icons/docker-original.svg' },
-  { name: 'Git', icon: '/icons/git-original.svg' },
-  { name: 'OpenCV', icon: '/icons/opencv-original.svg' },
-  { name: 'Whisper AI', icon: '/icons/python-original.svg' },
-  { name: 'Gemini API', icon: '/icons/google-original.svg' },
-  { name: 'Linux', icon: '/icons/linux-original.svg' },
-  { name: 'AWS', icon: '/icons/amazonwebservices-original-wordmark.svg' },
-  { name: 'AI/ML', icon: '/icons/tensorflow-original.svg' },
+// Skills grouped as on the resume
+const skillGroups = [
+  { title: 'Languages', items: ['TypeScript', 'JavaScript', 'Python', 'SQL'] },
+  {
+    title: 'Backend',
+    items: ['Node.js', 'NestJS', 'Express', 'FastAPI', 'Django & DRF', 'Flask', 'Sanic', 'REST APIs', 'Microservices', 'Async Programming'],
+  },
+  { title: 'Frontend & Desktop', items: ['React', 'Next.js', 'Angular', 'Svelte', 'Tailwind CSS', 'Electron', 'Tauri'] },
+  {
+    title: 'Android (Native)',
+    items: ['Kotlin', 'Jetpack Compose', 'Material 3', 'Room', 'Coroutines & Flow', 'MVVM / Clean Architecture', 'BiometricPrompt'],
+  },
+  { title: 'Flutter', items: ['Dart', 'BLoC / Cubit', 'get_it', 'Firebase Auth', 'Cloud Firestore'] },
+  {
+    title: 'Data & Storage',
+    items: ['MongoDB', 'PostgreSQL', 'MySQL', 'Redis', 'Supabase', 'Firebase', 'Appwrite', 'AWS S3 / MinIO'],
+  },
+  {
+    title: 'AI, LLM & OCR',
+    items: ['Gemini API', 'OpenAI API', 'xAI Grok', 'Whisper', 'Hugging Face', 'Ollama', 'Tesseract OCR', 'OpenCV', 'Prompt Engineering'],
+  },
+  {
+    title: 'Automation & Testing',
+    items: ['Chrome Extensions (MV3)', 'Playwright', 'Lighthouse', 'ETL Pipelines', 'MongoDB Change Streams', 'Workflow Automation'],
+  },
+  {
+    title: 'DevOps & Tools',
+    items: ['Docker', 'GitHub Actions (CI/CD)', 'Git', 'Linux', 'Postman', 'Swagger', 'Cursor', 'Claude Code'],
+  },
 ];
 
-// Skills to display on the 3D ring balls (9 specific technologies)
+// Technologies shown as badges orbiting the 3D planet
 const ringSkills = [
+  { name: 'TypeScript', icon: '/icons/ring/typescript.png' },
   { name: 'React', icon: '/icons/ring/react.png' },
-  { name: 'Svelte', icon: '/icons/ring/svelte.png' },
   { name: 'Next.js', icon: '/icons/ring/nextjs.png' },
   { name: 'Node.js', icon: '/icons/ring/nodejs.png' },
-  { name: 'MongoDB', icon: '/icons/ring/mongodb.png' },
   { name: 'Python', icon: '/icons/ring/python.png' },
+  { name: 'Kotlin', icon: '/icons/ring/kotlin.png' },
+  { name: 'Flutter', icon: '/icons/ring/flutter.png' },
+  { name: 'Svelte', icon: '/icons/ring/svelte.png' },
+  { name: 'MongoDB', icon: '/icons/ring/mongodb.png' },
   { name: 'Docker', icon: '/icons/ring/docker.png' },
   { name: 'Git', icon: '/icons/ring/git.png' },
   { name: 'AWS', icon: '/icons/ring/amazonwebservices.png' },
@@ -56,7 +65,7 @@ const Skills: React.FC = () => {
     visible: {
       opacity: 1,
       transition: {
-        staggerChildren: 0.1,
+        staggerChildren: 0.08,
         delayChildren: 0.2,
       },
     },
@@ -123,28 +132,32 @@ const Skills: React.FC = () => {
             animate={isInView ? { opacity: 1 } : { opacity: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
           >
-            I work with a variety of technologies to build robust and scalable applications.
-            Here are some of the tools in my arsenal:
+            From full-stack web apps and AI-powered data pipelines to native Android and Flutter apps,
+            here is the toolkit I build with:
           </motion.p>
-          <motion.div 
+          <motion.div
             ref={skillsRef}
-            className="flex flex-wrap gap-4 mt-4"
+            className="flex flex-col gap-5 mt-2"
             variants={containerVariants}
             initial="hidden"
             animate={skillsInView ? "visible" : "hidden"}
           >
-            {skills.map((skill) => (
-              <motion.div 
-                key={skill.name}
-                variants={skillVariants}
-                whileHover={{ 
-                  scale: 1.05, 
-                  y: -5,
-                  transition: { duration: 0.2, type: "spring", stiffness: 300 }
-                }}
-                className="px-4 py-2 rounded-full border border-gray-800 bg-gray-900/50 hover:border-[#FF6500] hover:text-[#FF6500] transition-colors cursor-default will-change-transform"
-              >
-                {skill.name}
+            {skillGroups.map((group) => (
+              <motion.div key={group.title} variants={skillVariants} className="flex flex-col gap-2">
+                <h3 className="text-xs font-semibold uppercase tracking-[0.18em] text-[#FF6500]/80">
+                  {group.title}
+                </h3>
+                <div className="flex flex-wrap gap-2">
+                  {group.items.map((item) => (
+                    <motion.span
+                      key={item}
+                      whileHover={{ scale: 1.05, y: -3, transition: { duration: 0.2, type: "spring", stiffness: 300 } }}
+                      className="px-3 py-1 text-sm rounded-full border border-gray-800 bg-gray-900/50 text-gray-300 hover:border-[#FF6500] hover:text-[#FF6500] transition-colors cursor-default will-change-transform"
+                    >
+                      {item}
+                    </motion.span>
+                  ))}
+                </div>
               </motion.div>
             ))}
           </motion.div>
