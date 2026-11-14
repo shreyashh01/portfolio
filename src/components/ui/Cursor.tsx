@@ -1,6 +1,9 @@
 import { useEffect, useRef } from "react";
 
 const ORANGE = "#FF6500"; // portfolio accent
+const BASE = 32; // resting diameter (px)
+const HOVER_SCALE = 2.5; // 32px -> 80px, the zoom on hover
+const BORDER = 1.5; // px, kept constant while the ring zooms
 
 /**
  * Wiggly transparent cursor with an orange ring.
@@ -36,7 +39,7 @@ const Cursor = () => {
     let raf = 0;
 
     const updateSizeTarget = () => {
-      sizeTarget = pressed ? 0.6 : hovering ? 2.6 : 1;
+      sizeTarget = pressed ? 0.6 : hovering ? HOVER_SCALE : 1;
     };
 
     const tick = (now: number) => {
@@ -63,6 +66,7 @@ const Cursor = () => {
       // sx * sy = size^2 -> area stays constant while the shape stretches
       const sx = stretch * size;
       const sy = (1 / Math.sqrt(stretch)) * size;
+      ball.style.borderWidth = `${BORDER / size}px`; // counter-scale so the ring doesn't thicken on zoom
       ball.style.transform = `translate3d(${x}px, ${y}px, 0) rotate(${angle}rad) scale(${sx}, ${sy})`;
 
       raf = requestAnimationFrame(tick);
@@ -78,7 +82,11 @@ const Cursor = () => {
         root.style.opacity = hidden ? "0" : "1";
       }
       const el = e.target as HTMLElement | null;
-      const nextHover = !!el?.closest("a, button, summary, input, textarea, select, [role='button'], [data-cursor-hover]");
+      const nextHover = !!(
+        el?.closest("a, button, summary, input, textarea, select, [role='button'], [data-cursor-hover]") ||
+        el?.matches("h1, h2, h3, h4, h5, h6, p, span, img, svg, path, canvas") ||
+        el?.closest(".lottie-animation-container")
+      );
       if (nextHover !== hovering) {
         hovering = nextHover;
         updateSizeTarget();
@@ -146,9 +154,9 @@ const Cursor = () => {
     position: "absolute",
     top: 0,
     left: 0,
-    width: 20,
-    height: 20,
-    margin: "-10px 0 0 -10px",
+    width: BASE,
+    height: BASE,
+    margin: `${-BASE / 2}px 0 0 ${-BASE / 2}px`,
     borderRadius: "50%",
     display: "block",
     willChange: "transform",
@@ -161,8 +169,8 @@ const Cursor = () => {
       className="pointer-events-none fixed top-0 left-0 z-[99999]"
       style={{ opacity: 0, transition: "opacity 0.25s" }}
     >
-      <span ref={rippleRef} style={{ ...shape, opacity: 0, border: `1.5px solid ${ORANGE}` }} />
-      <span ref={ballRef} style={{ ...shape, background: "transparent", border: `1.5px solid ${ORANGE}` }} />
+      <span ref={rippleRef} style={{ ...shape, opacity: 0, border: `${BORDER}px solid ${ORANGE}` }} />
+      <span ref={ballRef} style={{ ...shape, background: "transparent", border: `${BORDER}px solid ${ORANGE}` }} />
     </div>
   );
 };
