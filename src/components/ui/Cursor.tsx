@@ -14,8 +14,25 @@ const BORDER = 1.5; // px, kept constant while the ring zooms
  * snaps back to a circle when it catches up. Hover grows it, press shrinks it,
  * click sends out a ripple ring.
  */
+const INTERACTIVE = "a, button, summary, input, textarea, select, label, [role='button'], [data-cursor-hover]";
+const TEXT_OR_MEDIA =
+  "h1, h2, h3, h4, h5, h6, p, span, li, blockquote, code, pre, strong, em, b, i, small, td, th, dt, dd, figcaption, " +
+  "img, svg, path, picture, video, canvas, .lottie-animation-container";
+
+// True over anything clickable, any text (including bare text inside a div) and any image/media.
+const isHoverTarget = (el: HTMLElement | null) => {
+  if (!el) return false;
+  if (el.closest(INTERACTIVE) || el.closest(TEXT_OR_MEDIA)) return true;
+  for (const node of el.childNodes) {
+    if (node.nodeType === Node.TEXT_NODE && node.textContent?.trim()) return true;
+  }
+  return false;
+};
+
 const Cursor = () => {
   const rootRef = useRef<HTMLDivElement>(null);
+  const invertRootRef = useRef<HTMLDivElement>(null);
+  const fillRef = useRef<HTMLSpanElement>(null);
   const ballRef = useRef<HTMLSpanElement>(null);
   const rippleRef = useRef<HTMLSpanElement>(null);
 
@@ -23,8 +40,10 @@ const Cursor = () => {
     const root = rootRef.current;
     const ball = ballRef.current;
     const ripple = rippleRef.current;
+    const invertRoot = invertRootRef.current;
+    const fill = fillRef.current;
     // Touchscreen laptops report maxTouchPoints > 0, so key off pointer type instead.
-    if (!root || !ball || !ripple || !window.matchMedia("(any-pointer: fine)").matches) return;
+    if (!root || !ball || !ripple || !invertRoot || !fill || !window.matchMedia("(any-pointer: fine)").matches) return;
 
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -38,8 +57,16 @@ const Cursor = () => {
     let last = performance.now();
     let raf = 0;
 
+    const setVisible = (on: boolean) => {
+      const v = on ? "1" : "0";
+      root.style.opacity = v;
+      invertRoot.style.opacity = v;
+    };
+
     const updateSizeTarget = () => {
       sizeTarget = pressed ? 0.6 : hovering ? HOVER_SCALE : 1;
+      // inverted-colour disc fades in while zoomed over text/media
+      fill.style.opacity = hovering && !pressed ? "1" : hovering ? "0.85" : "0";
     };
 
     const tick = (now: number) => {
@@ -67,7 +94,9 @@ const Cursor = () => {
       const sx = stretch * size;
       const sy = (1 / Math.sqrt(stretch)) * size;
       ball.style.borderWidth = `${BORDER / size}px`; // counter-scale so the ring doesn't thicken on zoom
-      ball.style.transform = `translate3d(${x}px, ${y}px, 0) rotate(${angle}rad) scale(${sx}, ${sy})`;
+      const transform = `translate3d(${x}px, ${y}px, 0) rotate(${angle}rad) scale(${sx}, ${sy})`;
+      ball.style.transform = transform;
+      fill.style.transform = transform;
 
       raf = requestAnimationFrame(tick);
     };
@@ -79,14 +108,10 @@ const Cursor = () => {
         seen = true;
         x = targetX;
         y = targetY;
-        root.style.opacity = hidden ? "0" : "1";
+        setVisible(!hidden);
       }
       const el = e.target as HTMLElement | null;
-      const nextHover = !!(
-        el?.closest("a, button, summary, input, textarea, select, [role='button'], [data-cursor-hover]") ||
-        el?.matches("h1, h2, h3, h4, h5, h6, p, span, img, svg, path, canvas") ||
-        el?.closest(".lottie-animation-container")
-      );
+      const nextHover = isHoverTarget(el);
       if (nextHover !== hovering) {
         hovering = nextHover;
         updateSizeTarget();
@@ -94,7 +119,7 @@ const Cursor = () => {
       const nextHidden = !!el?.closest('[data-hide-cursor="true"]');
       if (nextHidden !== hidden) {
         hidden = nextHidden;
-        root.style.opacity = hidden || !seen ? "0" : "1";
+        setVisible(!hidden && seen);
       }
     };
 
@@ -120,7 +145,7 @@ const Cursor = () => {
       hovering = false;
       pressed = false;
       updateSizeTarget();
-      root.style.opacity = "0";
+      setVisible(false);
     };
     const onOut = (e: PointerEvent) => {
       if (!e.relatedTarget) leave();
@@ -163,15 +188,27 @@ const Cursor = () => {
   } as const;
 
   return (
-    <div
-      ref={rootRef}
-      aria-hidden="true"
-      className="pointer-events-none fixed top-0 left-0 z-[99999]"
-      style={{ opacity: 0, transition: "opacity 0.25s" }}
-    >
-      <span ref={rippleRef} style={{ ...shape, opacity: 0, border: `${BORDER}px solid ${ORANGE}` }} />
-      <span ref={ballRef} style={{ ...shape, background: "transparent", border: `${BORDER}px solid ${ORANGE}` }} />
-    </div>
+    <>
+      {/* Inversion layer: a white disc under mix-blend-mode: difference flips the colours beneath it.
+          Must be its own fixed layer so the blend sees the page, and so the orange ring stays orange. */}
+      <div
+        ref={invertRootRef}
+        aria-hidden="true"
+        className="pointer-events-none fixed top-0 left-0 z-[99998]"
+        style={{ opacity: 0, mixBlendMode: "difference", transition: "opacity 0.25s" }}
+      >
+        <span ref={fillRef} style={{ ...shape, opacity: 0, background: "#fff", transition: "opacity 0.3s" }} />
+      </div>
+      <div
+        ref={rootRef}
+        aria-hidden="true"
+        className="pointer-events-none fixed top-0 left-0 z-[99999]"
+        style={{ opacity: 0, transition: "opacity 0.25s" }}
+      >
+        <span ref={rippleRef} style={{ ...shape, opacity: 0, border: `${BORDER}px solid ${ORANGE}` }} />
+        <span ref={ballRef} style={{ ...shape, background: "transparent", border: `${BORDER}px solid ${ORANGE}` }} />
+      </div>
+    </>
   );
 };
 
