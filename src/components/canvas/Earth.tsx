@@ -5,6 +5,13 @@ import * as THREE from 'three';
 
 import Ball from './Ball';
 
+// Narrow FOV + a distant camera = weak perspective, so orbs spread evenly around the ring
+// instead of looking huge up close and bunched together at the back.
+const FOV = 28;
+const BASE_CAMERA = new THREE.Vector3(-15, 10, 20).multiplyScalar(1.68);
+const SHIFT_RIGHT = 0.09; // push the scene right (fraction of canvas width), away from the skills panel
+
+
 const EarthModel = () => {
   const earth = useGLTF('/planet/scene.gltf');
   
@@ -40,6 +47,19 @@ interface Skill {
   icon: string;
 }
 
+// Ring plane: tilted away from the camera by OPEN_ANGLE (0 = face-on circle, 90 = edge-on line).
+// A rounder projected ellipse keeps the orbs evenly spread; TILT_DIRECTION picks which way it leans.
+const OPEN_ANGLE = THREE.MathUtils.degToRad(40);
+const TILT_DIRECTION = THREE.MathUtils.degToRad(45);
+const RING_TILT = (() => {
+  const toCamera = BASE_CAMERA.clone().normalize();
+  const right = new THREE.Vector3().crossVectors(new THREE.Vector3(0, 1, 0), toCamera).normalize();
+  const up = new THREE.Vector3().crossVectors(toCamera, right).normalize();
+  const lean = right.multiplyScalar(Math.cos(TILT_DIRECTION)).add(up.multiplyScalar(Math.sin(TILT_DIRECTION)));
+  const normal = toCamera.multiplyScalar(Math.cos(OPEN_ANGLE)).add(lean.multiplyScalar(Math.sin(OPEN_ANGLE)));
+  return new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), normal.normalize());
+})();
+
 const SkillsRing = ({ skills, visible }: { skills: Skill[], visible: boolean }) => {
   const groupRef = useRef<THREE.Group>(null);
   const [ballsVisible, setBallsVisible] = useState(false);
@@ -68,7 +88,8 @@ const SkillsRing = ({ skills, visible }: { skills: Skill[], visible: boolean }) 
   const radius = 8.6;
 
   return (
-    <group ref={groupRef} rotation={[0.85, 0.5, -0.25]}>
+    <group quaternion={RING_TILT}>
+    <group ref={groupRef}>
       {/* orbit track: thin orange ring in the same plane the badges travel on */}
       <mesh rotation={[Math.PI / 2, 0, 0]} visible={ballsVisible}>
         <torusGeometry args={[radius, 0.018, 8, 200]} />
@@ -96,17 +117,22 @@ const SkillsRing = ({ skills, visible }: { skills: Skill[], visible: boolean }) 
         );
       })}
     </group>
+    </group>
   );
 };
 
 // Pull the camera back on narrow canvases so the whole orbit always stays in frame.
-const BASE_CAMERA = new THREE.Vector3(-15, 10, 20);
+// Pull the camera back on narrow canvases so the whole orbit always stays in frame.
 const FitCamera = () => {
   const { camera, size, invalidate } = useThree();
   useEffect(() => {
     const aspect = size.width / size.height;
     const zoomOut = Math.max(1, 0.85 / aspect);
     camera.position.copy(BASE_CAMERA).multiplyScalar(zoomOut);
+    // Negative x offset slides the rendered image to the right without moving the orbit pivot
+    (camera as THREE.PerspectiveCamera).setViewOffset(
+      size.width, size.height, -size.width * SHIFT_RIGHT, 0, size.width, size.height,
+    );
     camera.updateProjectionMatrix();
     invalidate();
   }, [camera, size.width, size.height, invalidate]);
@@ -127,10 +153,10 @@ const EarthCanvas = ({ skills = [], visible = true }: { skills?: Skill[], visibl
       }}
       performance={{ min: 0.3 }}
       camera={{
-        fov: 45,
+        fov: FOV,
         near: 0.1,
-        far: 200,
-        position: [-15, 10, 20],
+        far: 400,
+        position: BASE_CAMERA.toArray(),
       }}
     >
       <Suspense fallback={null}>

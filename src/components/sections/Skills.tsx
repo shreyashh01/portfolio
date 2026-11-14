@@ -190,7 +190,7 @@ const Skills: React.FC = () => {
       id="skills" 
       className="relative z-10 min-h-screen w-full bg-[#050505] text-white flex items-center justify-center py-20 px-4"
     >
-      <div className="max-w-6xl w-full grid grid-cols-1 md:grid-cols-[0.9fr_1.1fr] gap-6 items-center">
+      <div className="max-w-7xl w-full grid grid-cols-1 md:grid-cols-[0.9fr_1.1fr] gap-10 items-center">
         {/* Left Side - Skills Content */}
         <motion.div 
           className="flex flex-col gap-6"
