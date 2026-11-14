@@ -1,7 +1,9 @@
 import { useEffect, useRef } from "react";
 
+const ORANGE = "#FF6500"; // portfolio accent
+
 /**
- * Wiggly blend-mode cursor.
+ * Wiggly transparent cursor with an orange ring.
  *
  * The dot trails the pointer with a frame-rate independent lerp. The *lag distance*
  * (pointer minus dot) drives a volume-preserving stretch, and the dot rotates
@@ -157,10 +159,10 @@ const Cursor = () => {
       ref={rootRef}
       aria-hidden="true"
       className="pointer-events-none fixed top-0 left-0 z-[99999]"
-      style={{ opacity: 0, mixBlendMode: "difference", transition: "opacity 0.25s" }}
+      style={{ opacity: 0, transition: "opacity 0.25s" }}
     >
-      <span ref={rippleRef} style={{ ...shape, opacity: 0, border: "1.5px solid #fff" }} />
-      <span ref={ballRef} style={{ ...shape, background: "#fff" }} />
+      <span ref={rippleRef} style={{ ...shape, opacity: 0, border: `1.5px solid ${ORANGE}` }} />
+      <span ref={ballRef} style={{ ...shape, background: "transparent", border: `1.5px solid ${ORANGE}` }} />
     </div>
   );
 };
