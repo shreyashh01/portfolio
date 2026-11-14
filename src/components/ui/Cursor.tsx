@@ -94,8 +94,9 @@ const Cursor = () => {
     };
   }, [animate]);
 
-  // Don't render custom cursor on touch devices
-  if (typeof navigator !== 'undefined' && (navigator.maxTouchPoints > 0)) {
+  // Only skip the custom cursor when the *primary* input is coarse (phones/tablets).
+  // navigator.maxTouchPoints is unreliable: touchscreen laptops report > 0 even with a mouse.
+  if (typeof window !== 'undefined' && !window.matchMedia('(any-pointer: fine)').matches) {
     return null;
   }
 
