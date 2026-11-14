@@ -44,8 +44,51 @@ const experiences = [
 
 const projects = [
   {
+    id: "epaper",
+    title: "ePaper Data Automation",
+    context: "Perception & Quant Research · 2026",
+    tech: ["Python", "FastAPI", "Node.js", "Chrome Extension (MV3)", "Redis", "MongoDB", "AWS S3"],
+    description: [
+      "Built a distributed platform that automatically downloads and processes 1,080+ editions per day from 150+ multilingual publications, syncing everything to AWS S3.",
+      "Cut manual operational effort by ~90% by automating authenticated download, validation, deduplication, retries and cloud upload end to end.",
+      "Diagnosed and fixed real-world failure modes: CDN Referer/hotlink restrictions, captcha challenges, phantom pages from signed URLs and S3 upload race conditions.",
+    ]
+  },
+  {
+    id: "autocrop",
+    title: "AI-Powered Auto-Cropping System",
+    context: "Perception & Quant Research · 2026",
+    tech: ["React", "TypeScript", "NestJS", "MongoDB", "PostgreSQL", "Redis", "Docker", "AWS S3 / MinIO", "Tesseract OCR"],
+    description: [
+      "Developed and maintain a full-stack image processing platform in a Dockerized monorepo, handling 22,000+ newspaper pages daily with a fault-tolerant, high-throughput pipeline.",
+      "Built secure REST APIs (JWT, Swagger) with image upload pipelines, OCR integration and automated cropping workflows.",
+      "Designed MongoDB, PostgreSQL and Redis services for persistence, caching, queues and health monitoring; optimized endpoints, queries and image workflows for a ~30–40% performance gain.",
+    ]
+  },
+  {
+    id: "ocr",
+    title: "OCR & Document Digitization Pipeline",
+    context: "Perception & Quant Research · 2026",
+    tech: ["Python", "FastAPI", "Tesseract", "Google Gemini", "OpenCV", "PyMuPDF", "MongoDB", "Redis", "Docker"],
+    description: [
+      "Improved a hybrid OCR pipeline (Tesseract for English, Gemini for multilingual) covering 13+ Indian languages, raising accuracy 25–35% and cutting manual corrections by 85%+.",
+      "Optimized preprocessing, layout analysis and Unicode-aware post-processing; built searchable PDFs, hOCR output, article segmentation and headline/byline/metadata extraction.",
+    ]
+  },
+  {
+    id: "testauto",
+    title: "AI-Powered Test Automation Platform",
+    context: "Perception & Quant Research · 2026",
+    tech: ["React", "TypeScript", "Node.js", "Playwright", "Lighthouse", "Supabase", "Docker", "xAI Grok"],
+    description: [
+      "Built a unified dashboard for UI, functional, performance, load and accessibility testing, with Playwright regression / end-to-end runs and automated Lighthouse reports.",
+      "Integrated xAI Grok for AI-assisted UI review, failure analysis and Playwright test generation, reducing manual testing effort by ~70%; containerized with Docker Compose.",
+    ]
+  },
+{
     id: "volvo",
     title: "Volvo Anomalies Detection Dashboard",
+    context: "Proxie Studio · 2024–25",
     tech: ["Svelte", "ShadCN", "Supabase", "PostgreSQL", "WebSockets"],
     description: [
       "Built a real-time dashboard for camera-based anomaly detection.",
@@ -57,6 +100,7 @@ const projects = [
   {
     id: "whisper",
     title: "Whisper AI Real-Time Transcription",
+    context: "Proxie Studio · 2024–25",
     tech: ["React", "Electron", "Supabase", "Hugging Face"],
     description: [
       "Designed a desktop application for real-time speech-to-text transcription with 4–5 second latency.",
@@ -68,6 +112,7 @@ const projects = [
   {
     id: "coverletter",
     title: "Make My Cover Letter",
+    context: "Proxie Studio · 2024–25",
     tech: ["Next.js", "Supabase", "Stripe", "Gemini API"],
     description: [
       "Built an AI-powered platform to generate personalized cover letters in under 10 seconds.",
@@ -83,6 +128,31 @@ const projects = [
       "Introduced an AI-powered system to scan invoices and manage inventory, reducing manual entry by 60%.",
       "Extracted structured data from images using the Moondream model and OpenCV.",
       "Stored and managed real-time data using Supabase."
+    ]
+  },
+  {
+    id: "wealthflow",
+    title: "WealthFlow \u2013 Native Android Finance Manager",
+    context: "Personal project",
+    tech: ["Kotlin", "Jetpack Compose", "Material 3", "Room", "Coroutines / Flow", "MVVM", "BiometricPrompt"],
+    description: [
+      "Built a native Android personal finance and budget manager with Kotlin and Jetpack Compose (Material 3), structured with MVVM, Clean Architecture and unidirectional data flow.",
+      "Implemented local-first storage with Room (expenses, incomes, budgets, future expenses, profile), with DAOs exposing Kotlin Flow so the UI updates automatically on every change.",
+      "Added fingerprint login with the AndroidX BiometricPrompt API, falling back to a 4-digit PIN; drew custom Canvas charts in Compose without third-party chart libraries.",
+      "Built budgeting features (categories, recurring and future expenses, savings goals) and CSV / JSON export and sharing through FileProvider and the Storage Access Framework.",
+    ]
+  },
+  {
+    id: "chatapp",
+    title: "Chat App (Flutter)",
+    context: "Personal project · Jan 2026",
+    link: "https://github.com/shreyashh01/chat-app",
+    tech: ["Flutter", "Dart", "Firebase Auth", "Cloud Firestore", "BLoC / Cubit", "get_it"],
+    description: [
+      "Built a private one-to-one messenger in Flutter, not a social feed: no public profiles or timeline, and people are discovered only through the contacts saved on the user's phone.",
+      "Added secure sign-up and login with Firebase Authentication, plus uniqueness checks on email and phone number stored in Cloud Firestore.",
+      "Designed deterministic chat-room IDs (sorted user-ID pair) to prevent duplicate conversations, and atomic Firestore batched writes that save a message and update the room's last-message metadata together.",
+      "Implemented phone-contact discovery with runtime permission and number normalization, structured in layers with the repository pattern, BLoC / Cubit and get_it.",
     ]
   }
 ];
@@ -233,9 +303,13 @@ const Experience = () => {
                                     <div className="absolute -left-2 -top-2 w-4 h-4 border-l border-t border-gray-700 group-hover:border-cyan-500 transition-colors duration-300" />
                                     <div className="absolute -right-2 -bottom-2 w-4 h-4 border-r border-b border-gray-700 group-hover:border-cyan-500 transition-colors duration-300" />
 
-                                    <h3 className="text-2xl md:text-3xl font-bold text-white mb-4 group-hover:text-cyan-400 transition-colors duration-300">
+                                    <h3 className="text-2xl md:text-3xl font-bold text-white mb-1 group-hover:text-cyan-400 transition-colors duration-300">
                                         {proj.title}
                                     </h3>
+                                    {"context" in proj && proj.context && (
+                                        <p className="font-mono text-xs text-gray-500 mb-4">{proj.context}</p>
+                                    )}
+                                    {!("context" in proj && proj.context) && <div className="mb-3" />}
 
                                     <ul className="space-y-2 text-gray-300/80 leading-relaxed font-light">
                                         {proj.description.map((item, i) => (
@@ -245,6 +319,16 @@ const Experience = () => {
                                             </li>
                                         ))}
                                     </ul>
+                                    {"link" in proj && proj.link && (
+                                        <a
+                                            href={proj.link}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="mt-4 inline-block font-mono text-xs text-cyan-400 hover:text-cyan-300 underline-offset-4 hover:underline"
+                                        >
+                                            ↗ view on GitHub
+                                        </a>
+                                    )}
                                 </motion.div>
                             </div>
                         </div>
