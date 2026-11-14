@@ -137,21 +137,6 @@
 
 
 
-/* Ensure cursor is always on top for blend mode to work */
-.cursor-blob {
-  mix-blend-mode: difference;
-  pointer-events: none;
-  z-index: 99999;
-}
-
-/* Cursor hover state — CSS transition instead of Framer Motion */
-.cursor-blob.cursor-hovering {
-  width: 5rem;
-  height: 5rem;
-  background-color: rgba(255, 255, 255, 1);
-  border-color: rgba(255, 255, 255, 0);
-}
-
 /* Custom Scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
