@@ -10,14 +10,41 @@ const Cursor = () => {
   const isHidden = useRef(false);
   const rafId = useRef<number>(0);
 
-  // Smooth lerp animation loop — no React state, pure DOM manipulation
+  // Spring physics state (no React state, pure DOM manipulation)
+  const velX = useRef(0);
+  const velY = useRef(0);
+  const angle = useRef(0);
+  const stretch = useRef(0);
+
+  // Jelly animation loop: a spring chases the mouse (so it overshoots and wobbles),
+  // and the blob squashes/stretches along its direction of travel.
   const animate = useCallback(() => {
-    // Lerp for smooth following
-    currentX.current += (posX.current - currentX.current) * 0.15;
-    currentY.current += (posY.current - currentY.current) * 0.15;
+    const STIFFNESS = 0.14; // higher = snappier
+    const DAMPING = 0.76; // lower = more jiggle
+
+    velX.current = (velX.current + (posX.current - currentX.current) * STIFFNESS) * DAMPING;
+    velY.current = (velY.current + (posY.current - currentY.current) * STIFFNESS) * DAMPING;
+    currentX.current += velX.current;
+    currentY.current += velY.current;
+
+    const speed = Math.hypot(velX.current, velY.current);
+    if (speed > 0.3) {
+      // Shortest-path angle smoothing so direction changes wobble instead of snapping
+      const target = Math.atan2(velY.current, velX.current);
+      let diff = target - angle.current;
+      diff = Math.atan2(Math.sin(diff), Math.cos(diff));
+      angle.current += diff * 0.25;
+    }
+    const targetStretch = Math.min(speed * 0.035, 0.55);
+    stretch.current += (targetStretch - stretch.current) * 0.3;
+
+    const sx = 1 + stretch.current;
+    const sy = 1 - stretch.current * 0.55;
 
     if (cursorRef.current) {
-      cursorRef.current.style.transform = `translate3d(${currentX.current}px, ${currentY.current}px, 0)`;
+      cursorRef.current.style.transform =
+        `translate3d(${currentX.current}px, ${currentY.current}px, 0) translate(-50%, -50%) ` +
+        `rotate(${angle.current}rad) scale(${sx}, ${sy})`;
     }
 
     rafId.current = requestAnimationFrame(animate);
@@ -27,8 +54,8 @@ const Cursor = () => {
     rafId.current = requestAnimationFrame(animate);
 
     const moveCursor = (e: MouseEvent) => {
-      posX.current = e.clientX - 16;
-      posY.current = e.clientY - 16;
+      posX.current = e.clientX;
+      posY.current = e.clientY;
     };
 
     const handleMouseOver = (e: MouseEvent) => {
