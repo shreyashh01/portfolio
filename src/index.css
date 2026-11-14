@@ -257,3 +257,32 @@ html[data-theme-switching]::view-transition-old(root) {
 html[data-theme-switching]::view-transition-new(root) {
   z-index: 2;
 }
+
+/* ---------------------------------------------------------------------
+   Ink-splash reveal (Chromium: CSS Paint API).
+   public/ink-worklet.js draws the mask from these three properties.
+   ThemeProvider animates --ink-p from 0 to 1 and sets --ink-x/--ink-y.
+   --------------------------------------------------------------------- */
+@property --ink-p {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 0;
+}
+@property --ink-x {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 0;
+}
+@property --ink-y {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 0;
+}
+html[data-theme-switching][data-ink]::view-transition-new(root) {
+  -webkit-mask-image: paint(ink-reveal);
+  mask-image: paint(ink-reveal);
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+}

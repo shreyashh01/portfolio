@@ -1,9 +1,28 @@
-import { useCallback, useLayoutEffect, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useState, type ReactNode } from "react";
 import { flushSync } from "react-dom";
 import { ThemeContext, type Theme } from "./ThemeContext";
 
 const STORAGE_KEY = "portfolio-theme";
-const REVEAL_MS = 950;
+const REVEAL_MS = 1400;
+
+// The ink splash is drawn by a CSS Paint worklet (Chromium). Other browsers get a plain circle reveal.
+let inkReady = false;
+const loadInkWorklet = () => {
+  try {
+    const paintWorklet = (CSS as unknown as { paintWorklet?: { addModule: (url: string) => Promise<void> } }).paintWorklet;
+    if (!paintWorklet) return;
+    paintWorklet
+      .addModule(`${import.meta.env.BASE_URL}ink-worklet.js`)
+      .then(() => {
+        inkReady = true;
+      })
+      .catch(() => {
+        inkReady = false;
+      });
+  } catch {
+    inkReady = false;
+  }
+};
 
 const readStoredTheme = (): Theme => {
   try {
@@ -22,6 +41,11 @@ const readStoredTheme = (): Theme => {
  */
 export const ThemeProvider = ({ children }: { children: ReactNode }) => {
   const [theme, setTheme] = useState<Theme>(readStoredTheme);
+
+  // Load the ink worklet once so the very first switch is already inky
+  useEffect(() => {
+    loadInkWorklet();
+  }, []);
 
   // Keep <html data-theme> in sync; all light-mode CSS hangs off this attribute.
   useLayoutEffect(() => {
@@ -61,18 +85,36 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
         apply();
       });
 
+      const ink = inkReady;
+      if (ink) {
+        root.dataset.ink = "true";
+        root.style.setProperty("--ink-x", String(x));
+        root.style.setProperty("--ink-y", String(y));
+      }
+
       transition.ready
         .then(() => {
-          root.animate(
-            { clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${radius}px at ${x}px ${y}px)`] },
-            { duration: REVEAL_MS, easing: "cubic-bezier(0.65, 0, 0.35, 1)", pseudoElement: "::view-transition-new(root)" },
-          );
+          if (ink) {
+            // Ink splash: animate the worklet's progress property
+            root.animate(
+              { "--ink-p": [0, 1] } as unknown as Keyframe[],
+              { duration: REVEAL_MS, easing: "cubic-bezier(0.45, 0.05, 0.4, 1)", pseudoElement: "::view-transition-new(root)" },
+            );
+          } else {
+            root.animate(
+              { clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${radius}px at ${x}px ${y}px)`] },
+              { duration: 950, easing: "cubic-bezier(0.65, 0, 0.35, 1)", pseudoElement: "::view-transition-new(root)" },
+            );
+          }
         })
         .catch(() => {
           /* transition skipped (e.g. tab hidden): theme is already applied */
         });
       transition.finished.finally(() => {
         delete root.dataset.themeSwitching;
+        delete root.dataset.ink;
+        root.style.removeProperty("--ink-x");
+        root.style.removeProperty("--ink-y");
       });
     },
     [theme],
