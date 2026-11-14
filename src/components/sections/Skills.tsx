@@ -226,7 +226,7 @@ const Skills: React.FC = () => {
         {/* Right Side - Earth 3D Model with Skills Ring */}
         <motion.div 
           ref={canvasRef}
-          className="h-[520px] md:h-[760px] w-full flex items-center justify-center cursor-grab active:cursor-grabbing"
+          className="h-[520px] md:h-[760px] w-full min-w-0 min-[1500px]:w-auto min-[1500px]:-mr-24 flex items-center justify-center cursor-grab active:cursor-grabbing"
           variants={canvasVariants}
           initial="hidden"
           animate={canvasInView ? "visible" : "hidden"}

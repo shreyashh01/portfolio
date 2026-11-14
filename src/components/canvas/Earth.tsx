@@ -13,7 +13,12 @@ const BASE_CAMERA = new THREE.Vector3(-15, 10, 20).multiplyScalar(1.68);
 // which changed how the ring is seen.) The camera never auto-rotates: the planet spins instead,
 // so the ring keeps the same open view no matter how long the page stays open.
 const POLAR = Math.acos(BASE_CAMERA.y / BASE_CAMERA.length());
-const SHIFT_RIGHT = 0.09; // push the scene right (fraction of canvas width), away from the skills panel
+const ORBIT_RADIUS = 8.6;
+// Furthest any badge (incl. its halo) can reach from the centre, at ANY viewing angle,
+// plus a margin. Sizing the view to this circle guarantees nothing is ever cut off,
+// even if the visitor drags the planet around.
+const SAFE_HALF_EXTENT = ORBIT_RADIUS + 1.4 + 0.5;
+const PERSPECTIVE_MARGIN = 1.12; // badges nearer the camera look bigger than the flat radius suggests
 
 
 const EarthModel = ({ visible }: { visible: boolean }) => {
@@ -95,7 +100,7 @@ const SkillsRing = ({ skills, visible }: { skills: Skill[], visible: boolean }) 
     }
   });
 
-  const radius = 8.6;
+  const radius = ORBIT_RADIUS;
 
   return (
     <group quaternion={RING_TILT}>
@@ -131,20 +136,18 @@ const SkillsRing = ({ skills, visible }: { skills: Skill[], visible: boolean }) 
   );
 };
 
-// Pull the camera back on narrow canvases so the whole orbit always stays in frame.
-// Pull the camera back on narrow canvases so the whole orbit always stays in frame.
+// Choose the camera distance so the whole orbit fits the canvas on both axes, whatever its shape.
+// Re-runs on every resize and re-applies the lens too, since a hot-reloaded canvas keeps its old camera.
 const FitCamera = () => {
   const { camera, size, invalidate } = useThree();
   useEffect(() => {
     const aspect = size.width / size.height;
-    const zoomOut = Math.max(1, 0.85 / aspect);
-    // Re-apply the lens as well as the position: a hot-reloaded canvas keeps its old camera object.
+    const needed = 2 * SAFE_HALF_EXTENT * PERSPECTIVE_MARGIN; // world units that must be visible on each axis
+    const visibleHeight = Math.max(needed, needed / aspect);
+    const distance = visibleHeight / (2 * Math.tan(THREE.MathUtils.degToRad(FOV) / 2));
     Object.assign(camera, { fov: FOV });
-    camera.position.copy(BASE_CAMERA).multiplyScalar(zoomOut);
-    // Negative x offset slides the rendered image to the right without moving the orbit pivot
-    (camera as THREE.PerspectiveCamera).setViewOffset(
-      size.width, size.height, -size.width * SHIFT_RIGHT, 0, size.width, size.height,
-    );
+    camera.position.copy(BASE_CAMERA).setLength(distance);
+    (camera as THREE.PerspectiveCamera).clearViewOffset();
     camera.updateProjectionMatrix();
     invalidate();
   }, [camera, size.width, size.height, invalidate]);
